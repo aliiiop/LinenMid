@@ -74771,7 +74771,7 @@ MonoBehaviour:
   respawnPoint: {fileID: 888933860}
   baseTime: 6
   extraPerDeath: 4
-  maxTime: 30
+  maxTime: 29
   hideWhileDead:
   - {fileID: 2668154518656333591}
   - {fileID: 1238354856}
@@ -74818,6 +74818,7 @@ MonoBehaviour:
   deathEffect: {fileID: 4164358874160606031, guid: 698c15d07645bba419161b69746e8663, type: 3}
   grantsPitBuff: 0
   destroyOnDeath: 0
+  destroyDelay: 1.2
 --- !u!114 &1740023319
 MonoBehaviour:
   m_ObjectHideFlags: 0
