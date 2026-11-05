@@ -627,6 +627,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 243123866}
+  - component: {fileID: 243123867}
   m_Layer: 0
   m_Name: SpawnBlueL
   m_TagString: Untagged
@@ -649,6 +650,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 314488670}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &243123867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 243123865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 288f2f130cb5d0f46b2e4a571654709a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaveSpawner
+  team: 0
+  minionPrefab: {fileID: 6888356596891445787, guid: ffb310c3c33eeb8498e7ac8bf370c698, type: 3}
+  teamMaterial: {fileID: 2100000, guid: a6bb4685ba7c4044f9853661d4528bbb, type: 2}
+  lanePoints: []
+  enemyAncient: {fileID: 0}
+  firstDelay: 5
+  waveInterval: 25
+  minionsPerWave: 3
+  delayBetweenMinions: 1
 --- !u!1 &263499352
 GameObject:
   m_ObjectHideFlags: 0
@@ -761,6 +783,88 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 263499352}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &298547282
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 298547284}
+  - component: {fileID: 298547283}
+  - component: {fileID: 298547285}
+  m_Layer: 0
+  m_Name: managers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &298547283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298547282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddace3ced60a5f1469eef8bf8b2e2e80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  credits: 50
+  pausePanel: {fileID: 0}
+  shopPanel: {fileID: 0}
+  endPanel: {fileID: 0}
+  endTitleText: {fileID: 0}
+  promptText: {fileID: 0}
+  messageText: {fileID: 0}
+  matchTime: 0
+--- !u!4 &298547284
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298547282}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 26.81669, y: 0, z: -17.62283}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &298547285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298547282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03968cc955a64e74b906c85fee8912c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  playerHealth: {fileID: 366459454}
+  player: {fileID: 0}
+  shooting: {fileID: 0}
+  abilities: {fileID: 0}
+  playerRespawn: {fileID: 0}
+  redAncient: {fileID: 0}
+  healthBar: {fileID: 0}
+  healthText: {fileID: 0}
+  energyBar: {fileID: 0}
+  ammoText: {fileID: 0}
+  creditsText: {fileID: 0}
+  dashText: {fileID: 0}
+  abilityText: {fileID: 0}
+  scoreText: {fileID: 0}
+  nearTowerText: {fileID: 0}
+  nearTowerBar: {fileID: 0}
+  respawnText: {fileID: 0}
 --- !u!1 &312686948
 GameObject:
   m_ObjectHideFlags: 0
@@ -1067,6 +1171,11 @@ GameObject:
   m_Component:
   - component: {fileID: 366459453}
   - component: {fileID: 366459452}
+  - component: {fileID: 366459458}
+  - component: {fileID: 366459457}
+  - component: {fileID: 366459456}
+  - component: {fileID: 366459455}
+  - component: {fileID: 366459454}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -1116,6 +1225,113 @@ Transform:
   - {fileID: 1109351974}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &366459454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 366459451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aca11e71cca90f543bbc843f5bc7a738, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Health
+  maxHealth: 100
+  currentHealth: 0
+  invulnerable: 0
+  armor: 0
+  regenPerSecond: 0
+--- !u!114 &366459455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 366459451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 650e48247a7f4294796bbb4ce79121bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Team
+  id: 0
+  kind: 0
+  radius: 0.5
+--- !u!114 &366459456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 366459451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e4e3b5c3410efe4cba787ef6af38182, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerShooting
+  cam: {fileID: 0}
+  damage: 20
+  range: 120
+  fireRate: 0.15
+  magazineSize: 30
+  reloadTime: 1.5
+  headshotMultiplier: 2
+  baseSpread: 0.004
+  spreadPerShot: 0.004
+  maxSpread: 0.03
+  spreadRecovery: 0.06
+  recoilKick: 0.7
+  audioSource: {fileID: 0}
+  shootClip: {fileID: 0}
+  reloadClip: {fileID: 0}
+  hitClip: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}
+  currentAmmo: 0
+--- !u!114 &366459457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 366459451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a95f3ef24f35ac2448d9b95a06c519aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAbilities
+  maxEnergy: 100
+  energy: 0
+  energyRegen: 5
+  burstCost: 30
+  burstCooldown: 8
+  burstRadius: 7
+  burstDamage: 60
+  cooldownMultiplier: 1
+  burstEffectPrefab: {fileID: 0}
+--- !u!114 &366459458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 366459451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ab1a14f41e4ba44482ae8029c7232c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  moveSpeed: 6
+  jumpHeight: 1.2
+  gravity: -20
+  cameraPivot: {fileID: 1109351974}
+  mouseSensitivity: 2
+  minPitch: -35
+  maxPitch: 60
+  dashSpeed: 22
+  dashDuration: 0.15
+  maxDashCharges: 2
+  dashRechargeTime: 4
+  dashCharges: 0
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1985,6 +2201,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 899206651}
+  - component: {fileID: 899206652}
   m_Layer: 0
   m_Name: SpawnBlueR
   m_TagString: Untagged
@@ -2007,6 +2224,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 314488670}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &899206652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 899206650}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 288f2f130cb5d0f46b2e4a571654709a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaveSpawner
+  team: 1
+  minionPrefab: {fileID: 6888356596891445787, guid: ffb310c3c33eeb8498e7ac8bf370c698, type: 3}
+  teamMaterial: {fileID: 2100000, guid: 1ec1962d182ffb34f84c8834841605d9, type: 2}
+  lanePoints: []
+  enemyAncient: {fileID: 0}
+  firstDelay: 5
+  waveInterval: 25
+  minionsPerWave: 3
+  delayBetweenMinions: 1
 --- !u!1 &920075452
 GameObject:
   m_ObjectHideFlags: 0
@@ -3808,3 +4046,4 @@ SceneRoots:
   - {fileID: 2106917408}
   - {fileID: 314488670}
   - {fileID: 366459453}
+  - {fileID: 298547284}
