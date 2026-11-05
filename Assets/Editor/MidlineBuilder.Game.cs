@@ -466,7 +466,7 @@ public static partial class MidlineBuilder
         root.transform.SetParent(env, false);
         root.transform.position = pos;
         Team t = root.AddComponent<Team>(); t.id = id; t.kind = UnitKind.Ancient; t.radius = 3.5f;
-        t.displayName = blue ? "Синий Ancient" : "Красный Ancient";
+        t.displayName = blue ? "Синий реактор" : "Красный реактор";
         Health h = root.AddComponent<Health>(); h.maxHealth = 2500f;
         CapsuleCollider cc = root.AddComponent<CapsuleCollider>();
         cc.center = new Vector3(0f, 4f, 0f); cc.radius = 3.2f; cc.height = 8f;
@@ -503,7 +503,7 @@ public static partial class MidlineBuilder
         an.destroyEffect = P["Explosion"]; an.shieldVisual = shield;
         root.AddComponent<Shield>().guardians = guards;
         WorldHealthBar bar = root.AddComponent<WorldHealthBar>(); bar.height = 9.5f; bar.width = 5f;
-        Text3D(root.transform, "ANCIENT", new Vector3(0f, 11.5f, 0f), Quaternion.Euler(0f, blue ? 0f : 180f, 0f), 5f, col * 1.5f);
+        Text3D(root.transform, "РЕАКТОР", new Vector3(0f, 11.5f, 0f), Quaternion.Euler(0f, blue ? 0f : 180f, 0f), 5f, col * 1.5f);
         AddIcon(root.transform, 10f, blue ? M["IconBlue"] : M["IconRed"], false);
         return root;
     }

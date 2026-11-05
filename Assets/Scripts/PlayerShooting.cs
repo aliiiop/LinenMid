@@ -21,8 +21,8 @@ public class PlayerShooting : MonoBehaviour
     public float spreadRecovery = 0.06f;    // как быстро возвращается в норму (в секунду)
     public float recoilKick = 0.6f;         // подъём камеры за выстрел (градусы)
 
-    [Header("Эффекты (можно оставить пустыми)")]
-    public Transform muzzle;                // кончик ствола: отсюда летит трассер
+    [Header("Эффекты ")]
+    public Transform muzzle;                // кончик ствола отсюда летит трассер
     public BeamEffect tracer;
     public Light muzzleFlash;
     public AudioSource audioSource;
@@ -62,14 +62,13 @@ public class PlayerShooting : MonoBehaviour
 
     void OnDisable()
     {
-        // Если игрок умер во время перезарядки, корутина остановится: сбрасываем флаг
         IsReloading = false;
         if (muzzleFlash != null) muzzleFlash.enabled = false;
     }
 
     void Update()
     {
-        // Разброс постепенно сходит на нет, пока не стреляешь
+        
         currentSpread = Mathf.Max(baseSpread, currentSpread - spreadRecovery * Time.deltaTime);
 
         if (GameManager.Instance.InputBlocked) return;

@@ -151,7 +151,7 @@ public class UIManager : MonoBehaviour
         Health target = nearestTower != null ? nearestTower.Hp : redAncient;
         if (target == null) return;
 
-        string name = nearestTower != null ? "ВРАЖЕСКАЯ БАШНЯ" : "ВРАЖЕСКИЙ ANCIENT";
+        string name = nearestTower != null ? "ВРАЖЕСКАЯ БАШНЯ" : "ВРАЖЕСКИЙ РЕАКТОР";
         string state = "";
         if (target.invulnerable) state = "  <color=#7FC8FF>[щит]</color>";
         else if (nearestTower != null && !nearestTower.HasMinionSupport) state = "  <color=#7A8699>[нужны миньоны]</color>";

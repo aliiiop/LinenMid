@@ -109,7 +109,9 @@ public class AutoTest : MonoBehaviour
         string[] order = { "RedTowerR1", "RedTowerR2", "RedTowerL1", "RedTowerL2" };
         foreach (string n in order)
         {
-            Health h = GameObject.Find(n).GetComponent<Health>();
+            GameObject go = GameObject.Find(n);
+            if (go == null) { Log(n + " уже разрушена в игре"); continue; }
+            Health h = go.GetComponent<Health>();
             yield return null;                  // Shield обновляется в Update
             h.extraReduction = 0f;
             float d = h.TakeDamage(99999f, player);
