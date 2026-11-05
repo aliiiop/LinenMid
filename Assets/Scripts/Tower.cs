@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Защитная башня: стреляет лучом по врагам рядом (миньоны в приоритете).
+// Правило из концепта: башню нельзя сломать "как попало".
+//   1) внутренняя башня под щитом, пока жива внешняя (это делает скрипт Shield);
+//   2) если рядом нет вражеских миньонов, башня получает на 70% меньше урона.
 [RequireComponent(typeof(Health))]
 [RequireComponent(typeof(Team))]
 public class Tower : MonoBehaviour
@@ -10,11 +14,15 @@ public class Tower : MonoBehaviour
     public float range = 18f;
     public float damage = 25f;
     public float fireInterval = 1.5f;
-    public Transform muzzle;        // откуда вылетает луч (можно пустым)
-    public BeamEffect beam;         // визуальный луч (можно пустым)
+    [Range(0f, 0.9f)] public float noMinionReduction = 0.7f;
+    public Transform muzzle;            // откуда вылетает луч (можно пустым)
+    public BeamEffect beam;             // визуальный луч (можно пустым)
+    public GameObject shieldVisual;     // полупрозрачная сфера, видна пока башня под щитом
+    public GameObject destroyEffect;    // взрыв при разрушении
 
     public Health Hp { get; private set; }
     public Team TeamInfo { get; private set; }
+    public bool HasMinionSupport { get; private set; }   // есть ли рядом вражеские миньоны
 
     float nextShotTime;
     float nextScanTime;
@@ -36,6 +44,8 @@ public class Tower : MonoBehaviour
 
     void OnDestroyed()
     {
+        if (destroyEffect != null)
+            Destroy(Instantiate(destroyEffect, transform.position + Vector3.up * 3f, Quaternion.identity), 3f);
         GameManager.Instance.RegisterTowerLost(TeamInfo.id);
         Destroy(gameObject);
     }
@@ -44,13 +54,17 @@ public class Tower : MonoBehaviour
     {
         if (Hp.IsDead) return;
 
+        if (shieldVisual != null && shieldVisual.activeSelf != Hp.invulnerable)
+            shieldVisual.SetActive(Hp.invulnerable);
+
         if (Time.time >= nextScanTime)
         {
             nextScanTime = Time.time + 0.3f;
             target = FindTarget();
+            Hp.extraReduction = HasMinionSupport ? 0f : noMinionReduction;
         }
 
-        if (target == null || target.IsDead) return;
+        if (target == null || target.IsDead || !target.gameObject.activeInHierarchy) return;
         if (Time.time < nextShotTime) return;
 
         nextShotTime = Time.time + fireInterval;
@@ -67,6 +81,7 @@ public class Tower : MonoBehaviour
     {
         Health best = null;
         float bestScore = float.MaxValue;
+        HasMinionSupport = false;
 
         foreach (Collider c in Physics.OverlapSphere(transform.position, range))
         {
@@ -75,8 +90,12 @@ public class Tower : MonoBehaviour
             if (t == null || h == null || h.IsDead || !TeamInfo.IsEnemyOf(t)) continue;
 
             float score = Vector3.Distance(transform.position, c.transform.position);
-            if (t.kind == UnitKind.Minion) score -= 100f;          // миньоны в приоритете
-            else if (t.kind != UnitKind.Hero) continue;            // здания не цели
+            if (t.kind == UnitKind.Minion)
+            {
+                score -= 100f;                  // миньоны в приоритете
+                HasMinionSupport = true;
+            }
+            else if (t.kind != UnitKind.Hero) continue;            // здания и нейтралы не цели
 
             if (score < bestScore)
             {

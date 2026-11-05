@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Щит: объект неуязвим, пока жив хотя бы один из его "защитников".
+// Так внутренняя башня защищена внешней, а Ancient — внутренними башнями.
 [RequireComponent(typeof(Health))]
 public class Shield : MonoBehaviour
 {

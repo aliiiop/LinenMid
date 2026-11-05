@@ -1,23 +1,33 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// Главное меню: Играть (выбор героя), Как играть, Настройки, Титры, Выход.
+// Одновременно открыта только одна панель.
 public class MainMenu : MonoBehaviour
 {
-    public GameObject creditsPanel;
-    public GameObject heroPanel;
+    public GameObject mainPanel;
+    public GameObject[] panels;     // все панели меню, включая mainPanel
 
     void Start()
     {
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        creditsPanel.SetActive(false);
-        heroPanel.SetActive(false);
+        GameSettings.ApplyVolume();
+        OpenPanel(mainPanel);
     }
 
-    public void ShowHeroSelect(bool show)
+    void Update()
     {
-        heroPanel.SetActive(show);
+        // Esc в любой панели возвращает на главную
+        if (Input.GetKeyDown(KeyCode.Escape)) OpenPanel(mainPanel);
+    }
+
+    // Вызывается кнопками: в On Click передаём панель, которую нужно открыть
+    public void OpenPanel(GameObject panel)
+    {
+        foreach (GameObject p in panels)
+            if (p != null) p.SetActive(p == panel);
     }
 
     // Кнопки выбора героя: 0 = Стрелок, 1 = Бегун
@@ -25,11 +35,6 @@ public class MainMenu : MonoBehaviour
     {
         GameSettings.selectedHero = hero;
         SceneManager.LoadScene("Game");
-    }
-
-    public void ShowCredits(bool show)
-    {
-        creditsPanel.SetActive(show);
     }
 
     public void Quit()

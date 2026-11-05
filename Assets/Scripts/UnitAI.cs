@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.AI;
 
+// Один универсальный ИИ для миньонов, ботов-героев и нейтралов.
+// Миньон: идёт по точкам линии и дерётся со всеми врагами по пути.
+// Бот-герой: то же самое, но стреляет издалека и отступает домой лечиться.
+// Нейтрал: стоит в лагере, нападает на тех, кто подошёл, и не уходит далеко от дома.
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Health))]
 [RequireComponent(typeof(Team))]
@@ -17,6 +21,7 @@ public class UnitAI : MonoBehaviour
     public float damage = 8f;
     public float attackCooldown = 1.2f;
     public BeamEffect beam;             // луч выстрела для дальнобойных (по желанию)
+    public Transform muzzle;            // откуда летит луч (по желанию)
 
     [Header("Дом, отступление, привязка (для героев и нейтралов)")]
     public Transform home;
@@ -34,6 +39,7 @@ public class UnitAI : MonoBehaviour
     Health target;
     Team targetTeam;
     bool retreating;
+    Vector3 lastDestination = Vector3.positiveInfinity;
 
     void Awake()
     {
@@ -50,11 +56,13 @@ public class UnitAI : MonoBehaviour
             waypoints = (Transform[])waypoints.Clone();   // копия, чтобы не портить общий массив
             System.Array.Reverse(waypoints);
         }
+        // Небольшой разброс скорости, чтобы миньоны не шли идеальным строем
+        agent.speed *= Random.Range(0.92f, 1.08f);
     }
 
     void Update()
     {
-        if (health.IsDead) return;
+        if (health.IsDead || !agent.isOnNavMesh) return;
 
         // Поиск цели не каждый кадр, а 4 раза в секунду (экономит ресурсы)
         if (Time.time >= nextScanTime)
@@ -90,10 +98,10 @@ public class UnitAI : MonoBehaviour
             Team t = c.GetComponentInParent<Team>();
             Health h = c.GetComponentInParent<Health>();
             if (t == null || h == null || h.IsDead || !team.IsEnemyOf(t)) continue;
+            if (t.IsBuilding && h.invulnerable) continue;     // здание под щитом бить бесполезно
 
             float score = Vector3.Distance(transform.position, c.transform.position);
-            if (t.kind == UnitKind.Tower || t.kind == UnitKind.Ancient)
-                score += 50f;       // сначала живые цели, здания потом
+            if (t.IsBuilding) score += 50f;                     // сначала живые цели, здания потом
 
             if (score < bestScore)
             {
@@ -109,7 +117,7 @@ public class UnitAI : MonoBehaviour
     // ---------- Бой ----------
     void Fight()
     {
-        if (target == null || target.IsDead)
+        if (target == null || target.IsDead || !target.gameObject.activeInHierarchy)
         {
             target = null;
             return;
@@ -123,7 +131,7 @@ public class UnitAI : MonoBehaviour
         {
             agent.isStopped = true;
             if (toTarget != Vector3.zero)
-                transform.rotation = Quaternion.LookRotation(toTarget);
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(toTarget), 10f * Time.deltaTime);
 
             if (Time.time >= nextAttackTime)
             {
@@ -146,7 +154,10 @@ public class UnitAI : MonoBehaviour
         target.TakeDamage(damage * power, gameObject);
 
         if (beam != null)
-            beam.Show(transform.position + Vector3.up * 1.4f, target.transform.position + Vector3.up);
+        {
+            Vector3 from = muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.4f;
+            beam.Show(from, target.transform.position + Vector3.up);
+        }
     }
 
     // ---------- Движение по линии ----------
@@ -168,7 +179,12 @@ public class UnitAI : MonoBehaviour
     void GoTo(Vector3 position)
     {
         agent.isStopped = false;
-        agent.SetDestination(position);
+        // Новый путь считаем только если цель заметно сдвинулась
+        if ((position - lastDestination).sqrMagnitude > 0.25f)
+        {
+            agent.SetDestination(position);
+            lastDestination = position;
+        }
     }
 
     // ---------- Отступление к базе (для героев) ----------
@@ -176,7 +192,7 @@ public class UnitAI : MonoBehaviour
     {
         if (retreatBelow <= 0f || home == null) return;
 
-        float percent = health.currentHealth / health.maxHealth;
+        float percent = health.Percent;
         if (!retreating && percent < retreatBelow) retreating = true;
 
         if (retreating && Vector3.Distance(transform.position, home.position) < 6f)
@@ -192,5 +208,6 @@ public class UnitAI : MonoBehaviour
         waypointIndex = 0;
         target = null;
         retreating = false;
+        lastDestination = Vector3.positiveInfinity;
     }
 }

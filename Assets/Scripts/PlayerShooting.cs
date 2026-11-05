@@ -1,13 +1,15 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
+// Стрельба игрока: луч из центра экрана, магазин, перезарядка, разброс, отдача, хедшоты.
 public class PlayerShooting : MonoBehaviour
 {
     [Header("Оружие")]
     public Camera cam;
-    public float damage = 20f;
+    public float damage = 14f;
     public float range = 120f;
-    public float fireRate = 0.15f;          // секунд между выстрелами
+    public float fireRate = 0.13f;          // секунд между выстрелами
     public int magazineSize = 30;
     public float reloadTime = 1.5f;
     public float headshotMultiplier = 2f;
@@ -17,9 +19,12 @@ public class PlayerShooting : MonoBehaviour
     public float spreadPerShot = 0.004f;    // на сколько растёт после выстрела
     public float maxSpread = 0.03f;
     public float spreadRecovery = 0.06f;    // как быстро возвращается в норму (в секунду)
-    public float recoilKick = 0.7f;         // подъём камеры за выстрел (градусы)
+    public float recoilKick = 0.6f;         // подъём камеры за выстрел (градусы)
 
     [Header("Эффекты (можно оставить пустыми)")]
+    public Transform muzzle;                // кончик ствола: отсюда летит трассер
+    public BeamEffect tracer;
+    public Light muzzleFlash;
     public AudioSource audioSource;
     public AudioClip shootClip;
     public AudioClip reloadClip;
@@ -28,21 +33,38 @@ public class PlayerShooting : MonoBehaviour
 
     public int currentAmmo;
     public bool IsReloading { get; private set; }
+    public float ReloadProgress { get; private set; }
+    public float CurrentSpread => currentSpread;
+
+    // Событие для интерфейса (хитмаркер): (хедшот?, убил?)
+    public event Action<bool, bool> OnHit;
 
     float nextFireTime;
     float currentSpread;
+    float nextShieldHint;
     Team myTeam;
     PlayerController player;
 
     void Start()
     {
-        currentAmmo = magazineSize;
-        currentSpread = baseSpread;
         myTeam = GetComponent<Team>();
         player = GetComponent<PlayerController>();
 
         if (GameSettings.selectedHero == 0)
-            damage += 5f;                   // герой "Стрелок" бьёт сильнее
+        {
+            damage += 4f;                   // герой "Стрелок" бьёт сильнее
+            magazineSize += 6;              // и у него больше патронов
+        }
+        currentAmmo = magazineSize;
+        currentSpread = baseSpread;
+        if (muzzleFlash != null) muzzleFlash.enabled = false;
+    }
+
+    void OnDisable()
+    {
+        // Если игрок умер во время перезарядки, корутина остановится: сбрасываем флаг
+        IsReloading = false;
+        if (muzzleFlash != null) muzzleFlash.enabled = false;
     }
 
     void Update()
@@ -75,9 +97,10 @@ public class PlayerShooting : MonoBehaviour
         nextFireTime = Time.time + fireRate;
         currentAmmo--;
         PlaySound(shootClip);
+        if (muzzleFlash != null) StartCoroutine(Flash());
 
         // Луч из центра экрана со случайным отклонением (разброс)
-        Vector2 offset = Random.insideUnitCircle * currentSpread;
+        Vector2 offset = UnityEngine.Random.insideUnitCircle * currentSpread;
         Ray ray = cam.ViewportPointToRay(new Vector3(0.5f + offset.x, 0.5f + offset.y, 0f));
 
         currentSpread = Mathf.Min(maxSpread, currentSpread + spreadPerShot);
@@ -86,24 +109,57 @@ public class PlayerShooting : MonoBehaviour
         // Игнорируем слои Player и Minimap, чтобы не попасть в себя и в иконки
         int mask = ~LayerMask.GetMask("Player", "Minimap");
 
-        if (!Physics.Raycast(ray, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore))
-            return;
+        Vector3 endPoint = ray.origin + ray.direction * range;
+        if (Physics.Raycast(ray, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore))
+        {
+            endPoint = hit.point;
+            HandleHit(hit);
+        }
 
+        if (tracer != null)
+            tracer.Show(muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.4f, endPoint);
+    }
+
+    void HandleHit(RaycastHit hit)
+    {
         Health target = hit.collider.GetComponentInParent<Health>();
         Team targetTeam = hit.collider.GetComponentInParent<Team>();
         bool friendly = targetTeam != null && targetTeam.id == myTeam.id;
 
         if (target != null && !friendly && !target.IsDead)
         {
-            float dmg = damage * GameManager.Instance.PitMultiplier(TeamId.Blue);
+            float dmg = damage * GameManager.Instance.PitMultiplier(myTeam.id);
 
             // Хедшот: попали в верхнюю часть коллайдера живого существа
-            bool isUnit = targetTeam != null && targetTeam.kind != UnitKind.Tower && targetTeam.kind != UnitKind.Ancient;
-            if (isUnit && hit.point.y > hit.collider.bounds.max.y - 0.3f)
-                dmg *= headshotMultiplier;
+            bool isUnit = targetTeam != null && !targetTeam.IsBuilding;
+            bool headshot = isUnit && hit.point.y > hit.collider.bounds.max.y - 0.35f;
+            if (headshot) dmg *= headshotMultiplier;
 
-            target.TakeDamage(dmg, gameObject);
-            PlaySound(hitClip);
+            float dealt = target.TakeDamage(dmg, gameObject);
+
+            if (target.invulnerable)
+            {
+                // Попали в здание под щитом: подсказываем, почему нет урона
+                if (Time.time > nextShieldHint)
+                {
+                    GameManager.Instance.ShowMessage("Щит! Сначала разрушь предыдущую башню", 2f);
+                    nextShieldHint = Time.time + 3f;
+                }
+                DamagePopup.Show(hit.point, "щит", new Color(0.6f, 0.8f, 1f), 0.8f);
+            }
+            else
+            {
+                // Башня без поддержки миньонов почти не получает урона: подсказываем игроку
+                if (target.extraReduction > 0f && Time.time > nextShieldHint)
+                {
+                    GameManager.Instance.ShowMessage("Башня защищена: приведи к ней своих миньонов", 2f);
+                    nextShieldHint = Time.time + 4f;
+                }
+                Color c = headshot ? new Color(1f, 0.3f, 0.2f) : Color.white;
+                DamagePopup.Show(hit.point, Mathf.RoundToInt(dealt).ToString(), c, headshot ? 1.3f : 1f);
+                PlaySound(hitClip, 0.35f);
+                OnHit?.Invoke(headshot, target.IsDead);
+            }
         }
 
         if (hitEffectPrefab != null)
@@ -113,18 +169,31 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    IEnumerator Flash()
+    {
+        muzzleFlash.enabled = true;
+        yield return new WaitForSeconds(0.04f);
+        muzzleFlash.enabled = false;
+    }
+
     IEnumerator Reload()
     {
         IsReloading = true;
         PlaySound(reloadClip);
-        yield return new WaitForSeconds(reloadTime);
+        float t = 0f;
+        while (t < reloadTime)
+        {
+            t += Time.deltaTime;
+            ReloadProgress = t / reloadTime;
+            yield return null;
+        }
         currentAmmo = magazineSize;
         IsReloading = false;
     }
 
-    void PlaySound(AudioClip clip)
+    void PlaySound(AudioClip clip, float volume = 1f)
     {
         if (audioSource != null && clip != null)
-            audioSource.PlayOneShot(clip);
+            audioSource.PlayOneShot(clip, volume);
     }
 }

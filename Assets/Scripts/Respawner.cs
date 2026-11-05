@@ -2,12 +2,14 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
+// Возрождение героя (игрока или бота). С каждой смертью ждать дольше.
 [RequireComponent(typeof(Health))]
 public class Respawner : MonoBehaviour
 {
     public Transform respawnPoint;
     public float baseTime = 6f;
     public float extraPerDeath = 4f;            // каждая смерть удлиняет возрождение
+    public float maxTime = 30f;
     public GameObject[] hideWhileDead;          // модель и иконка, которые прячем
 
     public float RespawnTimeLeft { get; private set; }
@@ -41,8 +43,12 @@ public class Respawner : MonoBehaviour
 
     IEnumerator RespawnRoutine()
     {
+        // Игрок умер с открытым магазином: закрываем его
+        if (playerController != null && GameManager.Instance.shopPanel != null && GameManager.Instance.shopPanel.activeSelf)
+            GameManager.Instance.CloseShop();
+
         SetAlive(false);
-        RespawnTimeLeft = baseTime + extraPerDeath * (Deaths - 1);
+        RespawnTimeLeft = Mathf.Min(maxTime, baseTime + extraPerDeath * (Deaths - 1));
 
         while (RespawnTimeLeft > 0f)
         {

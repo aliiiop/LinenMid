@@ -1,11 +1,12 @@
 using System.Collections;
 using UnityEngine;
 
+// Выпускает волну миньонов каждые waveInterval секунд.
+// Чем больше башен потеряла вражеская команда, тем сильнее (больше HP и урона) наши миньоны.
 public class WaveSpawner : MonoBehaviour
 {
     public TeamId team;
     public GameObject minionPrefab;
-    public Material teamMaterial;           // цвет команды (TeamBlue или TeamRed)
     public Transform[] lanePoints;          // точки линии от СИНЕЙ базы к КРАСНОЙ
     public Transform enemyAncient;
 
@@ -13,6 +14,8 @@ public class WaveSpawner : MonoBehaviour
     public float waveInterval = 25f;
     public int minionsPerWave = 3;
     public float delayBetweenMinions = 1f;
+
+    public int WaveNumber { get; private set; }
 
     void Start()
     {
@@ -25,7 +28,10 @@ public class WaveSpawner : MonoBehaviour
 
         while (true)
         {
-            for (int i = 0; i < minionsPerWave; i++)
+            WaveNumber++;
+            // Каждая пятая волна на одного миньона больше
+            int count = minionsPerWave + WaveNumber / 5;
+            for (int i = 0; i < count; i++)
             {
                 SpawnOne();
                 yield return new WaitForSeconds(delayBetweenMinions);
@@ -44,9 +50,9 @@ public class WaveSpawner : MonoBehaviour
         ai.reverseRoute = (team == TeamId.Red);
         ai.finalGoal = enemyAncient;
 
-        // Красим модель в цвет команды
-        if (teamMaterial != null)
-            foreach (Renderer r in minion.GetComponentsInChildren<Renderer>())
-                r.sharedMaterial = teamMaterial;
+        // Усиление от потерянных вражеских башен: +15% здоровья за каждую
+        float power = GameManager.Instance.MinionPower(team);
+        Health h = minion.GetComponent<Health>();
+        h.IncreaseMax(h.maxHealth * (power - 1f));
     }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// Движение героя от третьего лица: бег, прыжок, рывок, поворот камеры мышью.
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
@@ -10,7 +11,6 @@ public class PlayerController : MonoBehaviour
 
     [Header("Камера")]
     public Transform cameraPivot;
-    public float mouseSensitivity = 2f;
     public float minPitch = -35f;   // наклон вверх
     public float maxPitch = 60f;    // наклон вниз
 
@@ -20,10 +20,15 @@ public class PlayerController : MonoBehaviour
     public int maxDashCharges = 2;
     public float dashRechargeTime = 4f;
     public int dashCharges;
+    public AudioClip dashClip;
+
+    public float DashRecharge01 => dashCharges >= maxDashCharges ? 1f : rechargeTimer / dashRechargeTime;
 
     CharacterController controller;
     Animator animator;
+    AudioSource audioSource;
     float verticalVelocity;
+    Vector3 launchVelocity;          // толчок от прыжковой платформы
     float pitch;
     float dashTimeLeft;
     Vector3 dashDirection;
@@ -33,14 +38,24 @@ public class PlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
+        audioSource = GetComponent<AudioSource>();
 
         // Герой "Бегун" из меню выбора: быстрее и 3 рывка
         if (GameSettings.selectedHero == 1)
         {
             moveSpeed *= 1.2f;
             maxDashCharges = 3;
+            dashRechargeTime = 3f;
         }
         dashCharges = maxDashCharges;
+    }
+
+    void OnEnable()
+    {
+        // После возрождения сбрасываем скорость падения и толчки
+        verticalVelocity = 0f;
+        launchVelocity = Vector3.zero;
+        dashTimeLeft = 0f;
     }
 
     void Update()
@@ -54,8 +69,9 @@ public class PlayerController : MonoBehaviour
 
     void Look()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+        float sens = GameSettings.Sensitivity;
+        float mouseX = Input.GetAxis("Mouse X") * sens;
+        float mouseY = Input.GetAxis("Mouse Y") * sens;
 
         transform.Rotate(0f, mouseX, 0f);                 // влево-вправо: весь герой
 
@@ -80,11 +96,15 @@ public class PlayerController : MonoBehaviour
             dashCharges--;
             dashTimeLeft = dashDuration;
             dashDirection = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward;
+            if (audioSource != null && dashClip != null) audioSource.PlayOneShot(dashClip, 0.5f);
         }
 
         // Гравитация и прыжок
         if (controller.isGrounded && verticalVelocity < 0f)
+        {
             verticalVelocity = -2f;
+            launchVelocity = Vector3.zero;                // приземлились: толчок закончился
+        }
 
         if (!blocked && Input.GetButtonDown("Jump") && controller.isGrounded)
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -106,7 +126,7 @@ public class PlayerController : MonoBehaviour
             animSpeed = input.magnitude;
         }
 
-        controller.Move((horizontal + Vector3.up * verticalVelocity) * Time.deltaTime);
+        controller.Move((horizontal + launchVelocity + Vector3.up * verticalVelocity) * Time.deltaTime);
 
         if (animator != null)
             animator.SetFloat("Speed", animSpeed);
@@ -131,5 +151,12 @@ public class PlayerController : MonoBehaviour
     public void AddRecoil(float degrees)
     {
         pitch -= degrees;
+    }
+
+    // Прыжковая платформа подбрасывает героя (вызывает JumpPad)
+    public void Launch(Vector3 velocity)
+    {
+        verticalVelocity = velocity.y;
+        launchVelocity = new Vector3(velocity.x, 0f, velocity.z);
     }
 }

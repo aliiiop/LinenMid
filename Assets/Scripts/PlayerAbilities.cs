@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Способность Q "Энергетический взрыв": урон всем врагам вокруг за энергию.
 public class PlayerAbilities : MonoBehaviour
 {
     [Header("Энергия")]
@@ -15,14 +16,19 @@ public class PlayerAbilities : MonoBehaviour
     public float burstDamage = 60f;
     public float cooldownMultiplier = 1f;       // магазин уменьшает это значение
     public GameObject burstEffectPrefab;        // по желанию
+    public AudioClip burstClip;
 
     public float CooldownLeft { get; private set; }
+    public float CooldownTotal => burstCooldown * cooldownMultiplier;
+    public bool CanUse => CooldownLeft <= 0f && energy >= burstCost;
 
     Team team;
+    AudioSource audioSource;
 
     void Start()
     {
         team = GetComponent<Team>();
+        audioSource = GetComponent<AudioSource>();
         energy = maxEnergy;
     }
 
@@ -33,17 +39,22 @@ public class PlayerAbilities : MonoBehaviour
 
         if (GameManager.Instance.InputBlocked) return;
 
-        if (Input.GetKeyDown(KeyCode.Q) && CooldownLeft <= 0f && energy >= burstCost)
-            Burst();
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            if (CanUse) Burst();
+            else if (energy < burstCost) GameManager.Instance.ShowMessage("Не хватает энергии", 1.5f);
+        }
     }
 
     void Burst()
     {
         energy -= burstCost;
-        CooldownLeft = burstCooldown * cooldownMultiplier;
+        CooldownLeft = CooldownTotal;
 
         if (burstEffectPrefab != null)
-            Destroy(Instantiate(burstEffectPrefab, transform.position, Quaternion.identity), 2f);
+            Destroy(Instantiate(burstEffectPrefab, transform.position + Vector3.up * 0.2f, Quaternion.identity), 2f);
+        if (audioSource != null && burstClip != null)
+            audioSource.PlayOneShot(burstClip, 0.8f);
 
         // Один и тот же враг может иметь несколько коллайдеров, поэтому запоминаем, кого уже ударили
         HashSet<Health> alreadyHit = new HashSet<Health>();
@@ -56,7 +67,9 @@ public class PlayerAbilities : MonoBehaviour
             if (t != null && t.id == team.id) continue;      // своих не бьём
 
             alreadyHit.Add(h);
-            h.TakeDamage(burstDamage * GameManager.Instance.PitMultiplier(team.id), gameObject);
+            float dealt = h.TakeDamage(burstDamage * GameManager.Instance.PitMultiplier(team.id), gameObject);
+            if (dealt > 0f)
+                DamagePopup.Show(h.transform.position + Vector3.up * 2f, Mathf.RoundToInt(dealt).ToString(), new Color(0.4f, 0.8f, 1f), 1.2f);
         }
     }
 
