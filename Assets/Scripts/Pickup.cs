@@ -7,6 +7,7 @@ public class Pickup : MonoBehaviour
     public PickupType type = PickupType.Credits;
     public int value = 30;
     public float rotateSpeed = 90f;
+    public AudioClip pickupSound;       // звук подбора (по желанию)
 
     void Update()
     {
@@ -20,6 +21,9 @@ public class Pickup : MonoBehaviour
         if (type == PickupType.Credits) GameManager.Instance.AddCredits(value);
         else if (type == PickupType.Health) other.GetComponent<Health>().Heal(value);
         else other.GetComponent<PlayerAbilities>().AddEnergy(value);
+
+        if (pickupSound != null)
+            AudioSource.PlayClipAtPoint(pickupSound, transform.position);
 
         Destroy(gameObject);
     }
