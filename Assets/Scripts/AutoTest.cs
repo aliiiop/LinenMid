@@ -78,6 +78,30 @@ public class AutoTest : MonoBehaviour
         Time.timeScale = 3f;
         yield return Shot("14_lane_wave", 20f);
 
+        // Крупный план миньонов: ставим камеру за ближайшим синим миньоном, который дерётся
+        Time.timeScale = 1f;
+        for (int tries = 0; tries < 40; tries++)
+        {
+            UnitAI fighter = null;
+            foreach (UnitAI u in FindObjectsByType<UnitAI>())
+            {
+                Team ut = u.GetComponent<Team>();
+                if (ut.kind == UnitKind.Minion && ut.id == TeamId.Red && Mathf.Abs(u.transform.position.x) > 20f) { fighter = u; break; }
+            }
+            if (fighter != null)
+            {
+                Vector3 p = fighter.transform.position + new Vector3(2.5f, 0f, -5f);
+                Vector3 look = fighter.transform.position - p;
+                Teleport(player, new Vector3(p.x, 0.1f, p.z), Quaternion.LookRotation(new Vector3(look.x, 0f, look.z)).eulerAngles.y);
+                yield return Shot("14b_minion_close", 0.15f);
+                yield return Shot("14c_minion_close", 0.2f);
+                yield return Shot("14d_minion_close", 0.2f);
+                break;
+            }
+            yield return new WaitForSeconds(0.5f);
+        }
+        Time.timeScale = 3f;
+
         Teleport(player, new Vector3(0f, 0.1f, -10f), 0f);
         yield return Shot("15_jungle_pit", 2f);
 

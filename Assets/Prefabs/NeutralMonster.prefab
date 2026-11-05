@@ -107,7 +107,7 @@ Animator:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1421747695667075945}
   m_Enabled: 1
-  m_Avatar: {fileID: 0}
+  m_Avatar: {fileID: 9000000, guid: 3723ae965f554f5428c7db0492602365, type: 3}
   m_Controller: {fileID: 9100000, guid: d2b273202a9803346880e14461f081b3, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
@@ -932,6 +932,7 @@ GameObject:
   - component: {fileID: 6983775826071864330}
   - component: {fileID: 1036430892459360736}
   - component: {fileID: 8160962529378779928}
+  - component: {fileID: 1462670943504313396}
   m_Layer: 8
   m_Name: NeutralMonster
   m_TagString: Untagged
@@ -1076,6 +1077,7 @@ MonoBehaviour:
   deathEffect: {fileID: 4164358874160606031, guid: 698c15d07645bba419161b69746e8663, type: 3}
   grantsPitBuff: 0
   destroyOnDeath: 1
+  destroyDelay: 1.2
 --- !u!114 &8160962529378779928
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1091,6 +1093,21 @@ MonoBehaviour:
   height: 2.5
   width: 1.2
   onlyWhenDamaged: 0
+--- !u!114 &1462670943504313396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6754091374679051823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82bd30026849a7a41baaadb4335cc0ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MinionAnimation
+  animator: {fileID: 620971120456146840}
+  attackDuration: 0.5
+  deathDuration: 0.7
 --- !u!1 &7457524531343234016
 GameObject:
   m_ObjectHideFlags: 0

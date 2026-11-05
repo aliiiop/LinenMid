@@ -89,6 +89,44 @@ public static partial class MidlineBuilder
             EditorApplication.Exit(1);
     }
 
+    // Добавляет процедурные анимации (удар, попадание, падение) в уже готовые префабы,
+    // не пересобирая сцены и материалы
+    [MenuItem("Midline/Добавить анимации миньонам")]
+    public static void AddMinionAnimations()
+    {
+        SetHumanoid("Assets/Models/Mutant.fbx", "Assets/Animations/Mutant@Idle.fbx");
+        Avatar mutantAvatar = AvatarOf("Assets/Models/Mutant.fbx");
+        Debug.Log("Midline: аватар Mutant valid=" + (mutantAvatar != null && mutantAvatar.isValid));
+
+        string[] prefabs = { "Minion", "NeutralMonster", "Pitmonster" };
+        foreach (string name in prefabs)
+        {
+            string path = PrefabDir + "/" + name + ".prefab";
+            GameObject root = PrefabUtility.LoadPrefabContents(path);
+            MinionAnimation ma = root.GetComponent<MinionAnimation>();
+            if (ma == null) ma = root.AddComponent<MinionAnimation>();
+            ma.animator = root.transform.Find("Model").GetComponent<Animator>();
+            ma.animator.avatar = mutantAvatar;
+            if (name == "Pitmonster") { ma.attackDuration = 0.8f; ma.deathDuration = 1.1f; }
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+        // Миньоны-декорации в главном меню используют ту же модель
+        var menu = EditorSceneManager.OpenScene(MenuScenePath, OpenSceneMode.Single);
+        foreach (Animator a in Object.FindObjectsByType<Animator>())
+            if (a.avatar == null || a.avatar.name.StartsWith("Mutant")) a.avatar = mutantAvatar;
+        EditorSceneManager.SaveScene(menu);
+
+        AssetDatabase.SaveAssets();
+        Debug.Log("Midline: анимации миньонов добавлены");
+    }
+
+    public static void BatchAddMinionAnimationsAndBuild()
+    {
+        AddMinionAnimations();
+        BuildWindows();
+    }
+
     public static void BatchImportTMP() { ImportTMPEssentials(); AssetDatabase.SaveAssets(); }
 
     public static void BatchBuildAll()
@@ -158,21 +196,35 @@ public static partial class MidlineBuilder
         MakeAnimator("Assets/Animations/MinionAnimator.controller", "Assets/Animations/Mutant@Idle.fbx", "Assets/Animations/Mutant@Zombie Walk.fbx", "Walk");
     }
 
+    // avatarSourceFbx: файл, из которого берём РАЗМЕТКУ костей (какая кость — рука, нога и т. д.).
+    // Скелет при этом строим из самой модели: у Mutant пальцы и имя корня отличаются от файла анимации,
+    // поэтому копировать чужой аватар целиком нельзя — он не привяжется и модель останется в T-позе.
     static void SetHumanoid(string path, string avatarSourceFbx)
     {
         ModelImporter mi = (ModelImporter)AssetImporter.GetAtPath(path);
         if (mi == null) return;
         mi.animationType = ModelImporterAnimationType.Human;
+        mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
         if (avatarSourceFbx != null)
         {
-            Avatar src = null;
-            foreach (Object o in AssetDatabase.LoadAllAssetsAtPath(avatarSourceFbx))
-                if (o is Avatar a) src = a;
-            mi.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
-            mi.sourceAvatar = src;
+            ModelImporter src = (ModelImporter)AssetImporter.GetAtPath(avatarSourceFbx);
+            HumanDescription desc = src.humanDescription;
+
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            List<SkeletonBone> skeleton = new List<SkeletonBone>();
+            foreach (Transform t in model.GetComponentsInChildren<Transform>(true))
+                skeleton.Add(new SkeletonBone { name = t.name, position = t.localPosition, rotation = t.localRotation, scale = t.localScale });
+            desc.skeleton = skeleton.ToArray();
+            mi.humanDescription = desc;
         }
-        else mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
         mi.SaveAndReimport();
+    }
+
+    static Avatar AvatarOf(string fbx)
+    {
+        foreach (Object o in AssetDatabase.LoadAllAssetsAtPath(fbx))
+            if (o is Avatar a) return a;
+        return null;
     }
 
     // Два состояния Idle и Run/Walk, переход по параметру Speed (его ставят скрипты)
@@ -559,6 +611,8 @@ public static partial class MidlineBuilder
 
         GameObject model = AddModel(root.transform, "Assets/Models/Mutant.fbx", 1.55f, "Assets/Animations/MinionAnimator.controller");
 
+        root.AddComponent<MinionAnimation>().animator = model.GetComponent<Animator>();
+
         UnitAI ai = root.AddComponent<UnitAI>();
         ai.aggroRange = 10f; ai.attackRange = 1.6f; ai.damage = 9f; ai.attackCooldown = 1.1f;
 
@@ -603,6 +657,10 @@ public static partial class MidlineBuilder
             l.transform.localPosition = new Vector3(0, 3f, 0);
             l.type = LightType.Point; l.color = Violet; l.range = 14f; l.intensity = 4f;
         }
+
+        MinionAnimation ma = root.AddComponent<MinionAnimation>();
+        ma.animator = model.GetComponent<Animator>();
+        if (pit) { ma.attackDuration = 0.8f; ma.deathDuration = 1.1f; }
 
         UnitAI ai = root.AddComponent<UnitAI>();
         ai.waypoints = new Transform[0];

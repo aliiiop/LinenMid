@@ -9,6 +9,7 @@ public class Bounty : MonoBehaviour
     public GameObject deathEffect;      // вспышка при смерти (по желанию)
     public bool grantsPitBuff;          // включить только у Pitmonster
     public bool destroyOnDeath;         // true у миньонов и нейтралов
+    public float destroyDelay = 1.2f;   // сколько ждать перед удалением (успевает проиграться падение)
 
     Health health;
     Team team;
@@ -54,6 +55,12 @@ public class Bounty : MonoBehaviour
             Destroy(Instantiate(deathEffect, transform.position + Vector3.up, Quaternion.identity), 2f);
 
         if (destroyOnDeath)
-            Destroy(gameObject);
+        {
+            // Тело больше не участвует в бою: выключаем коллайдеры и навигацию, ждём анимацию падения
+            foreach (Collider c in GetComponentsInChildren<Collider>()) c.enabled = false;
+            UnityEngine.AI.NavMeshAgent agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null) agent.enabled = false;
+            Destroy(gameObject, destroyDelay);
+        }
     }
 }

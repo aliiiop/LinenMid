@@ -32,6 +32,7 @@ public class UnitAI : MonoBehaviour
     Health health;
     NavMeshAgent agent;
     Animator animator;
+    MinionAnimation minionAnimation;    // процедурный удар (у миньонов и монстров)
 
     int waypointIndex;
     float nextAttackTime;
@@ -47,6 +48,7 @@ public class UnitAI : MonoBehaviour
         health = GetComponent<Health>();
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponentInChildren<Animator>();
+        minionAnimation = GetComponent<MinionAnimation>();
     }
 
     void Start()
@@ -152,6 +154,7 @@ public class UnitAI : MonoBehaviour
             power *= GameManager.Instance.MinionPower(team.id);
 
         target.TakeDamage(damage * power, gameObject);
+        if (minionAnimation != null) minionAnimation.PlayAttack();
 
         if (beam != null)
         {
